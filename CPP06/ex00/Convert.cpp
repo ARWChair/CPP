@@ -54,7 +54,8 @@ void Convert::check_number() {
         valid = false;
         return;
     } else if (ffffs == 1) {
-        value.pop_back();
+        int size = value.size();
+        value[size - 1] = 0;
         count--;
     }
     if (dots == 0 && ffffs == 0) {
@@ -78,19 +79,32 @@ void Convert::check_number() {
 }
 
 void Convert::convert_int() {
-    int val = std::stoi(value);
+    std::stringstream result(value);
+    std::stringstream temp;
+    std::string correction_test;
+    int val = 0;
 
+    result >> val;
     if (val < 127 && val >= 32)
         std::cout << "char: '" << static_cast<char>(val) << "'" << std::endl;
     else
         std::cout << "char: Non displayable" << std::endl;
-    std::cout << "int: " << val << std::endl
-              << "float: " << static_cast<float>(val) << ".0f" << std::endl
-              << "double: " << static_cast<double>(val) << ".0" << std::endl;
+    temp << val;
+    correction_test = temp.str();
+    if (correction_test == value) {
+        std::cout << "int: " << val << std::endl
+                << "float: " << static_cast<float>(val) << ".0f" << std::endl
+                << "double: " << static_cast<double>(val) << ".0" << std::endl;
+    } else {
+        std::cout << "int: impossible" << std::endl
+                << "float: impossible" << std::endl
+                << "double: impossible" << std::endl;
+    }
 }
 
 void Convert::convert_float(bool precission) {
-    double val = std::stod(value);
+    char *end;
+    double val = strtod(value.c_str(), &end);
 
     if (val < 127 && val >= 32)
         std::cout << "char: " << static_cast<char>(val) << std::endl;
@@ -98,12 +112,12 @@ void Convert::convert_float(bool precission) {
         std::cout << "char: Non displayable" << std::endl;
     if (precission == true) {
         std::cout << "int: " << static_cast<int>(val) << std::endl
-                  << "float: " << static_cast<float>(val) << ".0f" << std::endl
-                  << "double: " << val << ".0" << std::endl;
+                << "float: " << static_cast<float>(val) << ".0f" << std::endl
+                << "double: " << val << ".0" << std::endl;
     } else {
         std::cout << "int: " << static_cast<int>(val) << std::endl
-                  << "float: " << static_cast<float>(val) << "f" << std::endl
-                  << "double: " << val << std::endl;
+                << "float: " << static_cast<float>(val) << "f" << std::endl
+                << "double: " << val << std::endl;
     }
 }
 

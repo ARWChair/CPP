@@ -4,10 +4,10 @@
 # include <stdint.h>
 # pragma once
 
-typedef struct Data {
+typedef struct {
     int first;
     int second;
-};
+} Data;
 
 
 class Serialize {
@@ -18,8 +18,9 @@ class Serialize {
         ~Serialize();
 
         Serialize &operator=(const Serialize& copy);
-        uintptr_t serialize(Data* ptr);
-        Data* deserialize(uintptr_t raw);
 };
+
+uintptr_t serialize(Data* ptr);
+Data* deserialize(uintptr_t raw);
 
 #endif

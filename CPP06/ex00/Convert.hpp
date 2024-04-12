@@ -1,9 +1,11 @@
-#ifndef CONVERT_H
-# define CONVERT_H
+#ifndef CONVERT_HPP
+# define CONVERT_HPP
 # pragma once
-// # include <String>
+# include <string>
 # include <iostream>
-#include <iomanip>
+# include <sstream>
+# include <iomanip>
+# include <cmath>
 
 class Convert {
     private:
