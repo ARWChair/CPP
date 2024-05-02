@@ -2,8 +2,9 @@
 # define ARRAY_HPP
 # pragma once
 # include <iostream>
+# include <cstdlib>
 
-template <typename T>
+template <class T>
 class Array {
 	private:
 		T *arr;
@@ -11,11 +12,12 @@ class Array {
 	public:
 		Array();
 		Array(unsigned int len);
-		Array(const T& copy);
+		Array(const Array& copy);
 		~Array();
 
-		T& operator=(const T& copy);
+		T& operator=(const Array& copy);
 		T& operator[](unsigned int size);
+		void display();
 		int size() const;
 
 		class IndexBoundException: public std::exception {
@@ -26,7 +28,8 @@ class Array {
 
 template <typename T>
 Array<T>::Array() {
-	arr = new T();
+	arr = new T[0];
+	len = 0;
 }
 
 template <typename T>
@@ -35,9 +38,7 @@ Array<T>::Array(unsigned int len): len(len) {
 }
 
 template <typename T>
-Array<T>::Array(const T& copy) {
-	if (arr != NULL)
-		delete[] arr;
+Array<T>::Array(Array<T> const& copy) {
 	this->len = copy.len;
 	this->arr = new T[this->len];
 	for (unsigned int i = 0; i < this->len; i++) {
@@ -47,13 +48,11 @@ Array<T>::Array(const T& copy) {
 
 template <typename T>
 Array<T>::~Array() {
-	delete arr;
+	delete[] arr;
 }
 
 template <typename T>
-T& Array<T>::operator=(const T& copy) {
-	if (arr != NULL)
-		delete[] arr;
+T& Array<T>::operator=(Array<T> const& copy) {
 	this->len = copy.len;
 	this->arr = new T[this->len];
 	for (unsigned int i = 0; i < this->len; i++) {
@@ -70,6 +69,15 @@ T& Array<T>::operator[](unsigned int index) {
 }
 
 template <typename T>
+void Array<T>::display() {
+	for (size_t i = 0; i < len; i++) {
+		std::cout << arr[i];
+		if (len != i + 1)
+			std::cout << ", ";
+	}
+}
+
+template <typename T>
 int Array<T>::size() const {
 	return len;
 }
@@ -77,6 +85,13 @@ int Array<T>::size() const {
 template <typename T>
 const char *Array<T>::IndexBoundException::what() const throw() {
 	return "Index out of bounds";
+}
+
+template <typename T>
+std::ostream&	operator<<(std::ostream& stream, Array<T>& arr)
+{
+	arr.display();
+	return (stream);
 }
 
 #endif
