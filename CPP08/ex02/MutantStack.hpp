@@ -6,9 +6,9 @@
 template <typename T>
 class MutantStack {
 	private:
-		T* container;
-		int top;
-		int elements;
+		static T* container;
+		static int top;
+		static int elements;
 	public:
 		MutantStack();
 		MutantStack(const MutantStack& copy);
@@ -20,10 +20,31 @@ class MutantStack {
 		int size();
 		void reserve(int size);
 		void display();
+
+		class iterator {
+			private:
+				T* address;
+				int index;
+			public:
+				iterator();
+				iterator(const iterator& copy);
+				~iterator();
+
+				iterator &operator=(const iterator& copy);
+				iterator &operator++();
+				iterator operator++(int);
+				iterator &operator--();
+				iterator operator--(int);
+				T& operator*();
+				bool operator==(const iterator& other) const;
+				bool operator!=(const iterator& other) const;
+		};
+		typename MutantStack<T>::iterator begin();
+		typename MutantStack<T>::iterator end();
 };
 
 template <typename T>
-MutantStack<T>::MutantStack(): elements(0), top(0) {
+MutantStack<T>::MutantStack() {
 	container = new T[0]();
 }
 
@@ -107,5 +128,96 @@ template <typename T>
 int MutantStack<T>::size() {
 	return elements;
 }
+
+template <typename T>
+typename MutantStack<T>::iterator MutantStack<T>::begin() {
+       return iterator(container);
+}
+
+template <typename T>
+typename MutantStack<T>::iterator MutantStack<T>::end() {
+	return iterator(container + elements);
+}
+
+template <typename T>
+MutantStack<T>::iterator::iterator() {
+	index = 0;
+	address = new T[0]();
+}
+
+template <typename T>
+MutantStack<T>::iterator::iterator(const iterator& copy) {
+	this->index = copy.index;
+	this->address = new T[copy.address]();
+}
+
+template <typename T>
+MutantStack<T>::iterator::~iterator() {}
+
+template <typename T>
+typename MutantStack<T>::iterator& MutantStack<T>::iterator::operator=(const iterator& copy) {
+	this->index = copy.index;
+	this->address = new T[copy.address]();
+	return *this;
+}
+
+template <typename T>
+typename MutantStack<T>::iterator& MutantStack<T>::iterator::operator++() {
+	// ++index
+	if (address != nullptr) {
+		index++;
+		if (index < elements)
+			address = container[index];
+		else
+			address = nullptr;
+	}
+	return *this;
+}
+
+template <typename T>
+typename MutantStack<T>::iterator MutantStack<T>::iterator::operator++(int) {
+	// index++
+	iterator temp = *this
+	++(*this);
+	return temp;
+}
+
+template <typename T>
+typename MutantStack<T>::iterator& MutantStack<T>::iterator::operator--() {
+	// ++index
+	if (address != nullptr && index > 0) {
+		index--;
+		if (index >= 0)
+			address = container[index];
+		else
+			address = nullptr;
+	}
+	return *this;
+}
+
+template <typename T>
+typename MutantStack<T>::iterator MutantStack<T>::iterator::operator--(int) {
+	// index++
+	iterator temp = *this
+	--(*this);
+	return temp;
+}
+
+template <typename T>
+T& MutantStack<T>::iterator::operator*() {
+    if (address!= nullptr) 
+        return *address;
+}
+
+template <typename T>
+bool MutantStack<T>::iterator::operator==(const iterator& other) const {
+    return address == other.address && index == other.index;
+}
+
+template <typename T>
+bool MutantStack<T>::iterator::operator!=(const iterator& other) const {
+    return!(*this == other);
+}
+
 
 #endif
