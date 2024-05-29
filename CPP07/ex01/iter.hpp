@@ -11,6 +11,13 @@ void iter(T *address, int length, void(*f)(T const&)) {
 }
 
 template <typename T>
+void iter(T *address, int length, void(*f)(T&)) {
+    for (int i = 0; i < length; i++) {
+        f(address[i]);
+    }
+}
+
+template <typename T>
 void print_test(T& test) {
     std::cout << "LOL: " << test << std::endl;
 }

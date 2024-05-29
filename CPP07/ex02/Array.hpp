@@ -17,6 +17,7 @@ class Array {
 
 		T& operator=(const Array& copy);
 		T& operator[](unsigned int size);
+		const T& operator[](unsigned int size) const;
 		void display();
 		int size() const;
 
@@ -28,19 +29,19 @@ class Array {
 
 template <typename T>
 Array<T>::Array() {
-	arr = new T[0];
+	arr = new T[0]();
 	len = 0;
 }
 
 template <typename T>
 Array<T>::Array(unsigned int len): len(len) {
-	arr = new T[len];
+	arr = new T[len]();
 }
 
 template <typename T>
 Array<T>::Array(Array<T> const& copy) {
 	this->len = copy.len;
-	this->arr = new T[this->len];
+	this->arr = new T[this->len]();
 	for (unsigned int i = 0; i < this->len; i++) {
 		this->arr[i] = copy.arr[i];
 	}
@@ -63,6 +64,13 @@ T& Array<T>::operator=(Array<T> const& copy) {
 
 template <typename T>
 T& Array<T>::operator[](unsigned int index) {
+	if (index >= len)
+		throw IndexBoundException();
+	return arr[index];
+}
+
+template <typename T>
+const T& Array<T>::operator[](unsigned int index) const {
 	if (index >= len)
 		throw IndexBoundException();
 	return arr[index];

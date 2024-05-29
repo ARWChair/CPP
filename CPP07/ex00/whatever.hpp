@@ -4,11 +4,11 @@
 # pragma once
 
 template <typename T>
-void swap(T *val1, T *val2) {
+void swap(T &val1, T &val2) {
     T temp;
-    temp = *val1;
-    *val1 = *val2;
-    *val2 = temp;
+    temp = val1;
+    val1 = val2;
+    val2 = temp;
 }
 
 template <typename T>
