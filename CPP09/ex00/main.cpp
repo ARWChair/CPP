@@ -8,5 +8,9 @@ int main(int argc, char **argv) {
 	std::string arg = "";
 	for (int i = 0; argv[1][i]; i++)
 		arg += argv[1][i];
-	BitcoinExchange bitcoin(arg);
+	try {
+		BitcoinExchange bitcoin(arg);
+	} catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+	}
 }
