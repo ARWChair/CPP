@@ -24,7 +24,7 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 	// for (std::map<int, long double>::iterator it = this->db.begin(); it != this->db.end(); it++) {
 	// 	std::cout << it->first << " " << it->second << std::endl;
 	// }
-	calculate(this->file, lines);
+	std::cout << calculate(this->file, lines) << std::endl;
 }
 
 BitcoinExchange::BitcoinExchange(const BitcoinExchange& copy) {
@@ -122,7 +122,7 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 		lines[pos] += file[i];
 	}
 	pos = 0;
-	while (pos < line) {
+	while (pos < line - shift) {
 		i = 0;
 		error = false;
 		outOfBounds = false;
@@ -142,11 +142,11 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 			returning += "Error: date not found";
 		else
 			returning += replaceStr(lines[pos], " | ", " => ") + " = " + to_string_remove_trailing_zeros(value);
-		if (pos < line - 1)
+		if (pos < line - shift - 1) {
 			returning += "\n";
+		}
 		pos++;
 	}
-	std::cout << returning << std::endl;
 	return returning;
 }
 
@@ -371,19 +371,28 @@ std::string BitcoinExchange::mapString() {
 	std::string current = "";
 	std::string newFile = "";
 	int currLine = 0;
+	shift = 0;
 	int nls = 0;
 
 	for (int pos = 0; pos < file.length(); pos++) {
 		if (file[pos] == '\n')
 			nls++;
 	}
-	for (int i = 0; i < file.length(); i++) {
+	for (int pos = 0; pos < file.length(); pos++) {
+		if (file[pos] == '\n') {
+			nls--;
+			shift++;
+		}
+		if (file[pos] != '\n')
+			break;
+	}
+	for (int i = shift; i < file.length(); i++) {
 		for (int j = i; j < file.length() && nls > 0; j++, i++) {
-			if (file[j] == '\n' && currLine < this->lines) {
+			if (file[j] == '\n') {
 				nls--;
 				try {
 					newFile += strip_line(current);
-					if (currLine < this->lines - 1)
+					if (nls > 0)
 						newFile += "\n";
 				} catch (const std::exception& e) {
 					;

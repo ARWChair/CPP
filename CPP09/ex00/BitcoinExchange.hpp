@@ -24,6 +24,7 @@ class BitcoinExchange {
 		std::map<int, long double> db;
 		std::string file, dbFile;
 		int lines;
+		int shift;
 		std::string mapString();
 		std::string strip_line(std::string line);
 		std::string strip_line_db(std::string line);
