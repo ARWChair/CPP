@@ -57,14 +57,50 @@ int BitcoinExchange::getDate(std::string line, int &pos) {
 	std::stringstream dateStream(date);
 	int intDate = 0;
 	dateStream >> intDate;
-	std::cout << intDate << std::endl;
 	std::map<int, long double>::iterator first = this->db.begin();
 	std::map<int, long double>::iterator last = std::prev(this->db.end());
 	if (first->first > intDate || last->first < intDate)
 		return -1;
-	std::cout << "W" << std::endl;
 	return intDate;
 }
+
+long double BitcoinExchange::calcBtc(std::string line, int date, int pos) {
+	std::string value;
+
+	pos += 3;
+	while (line[pos] && line[pos] != '\n') {
+		value += line[pos];
+		pos++;
+	}
+	std::stringstream valueStream(value);
+	long double ldValue = 0;
+	valueStream >> ldValue;
+	std::map<int, long double>::iterator first = this->db.begin();
+	std::map<int, long double>::iterator last = std::prev(this->db.end());
+	for (; last != first; last--)
+		if (date >= last->first) {
+			break;
+	}
+	ldValue *= last->second;
+	return ldValue;
+}
+
+static std::string replaceStr(std::string line, std::string find, std::string replace) {
+	std::size_t pos;
+
+	pos = line.find(find);
+	line.replace(pos, find.length(), replace);
+	return line;
+}
+
+static std::string to_string_remove_trailing_zeros(long double value) {
+	std::string strValue = std::to_string(value);
+	for (int index = strValue.length() - 1; index > 0; index--) {
+		if (strValue[index] == '0')
+			strValue[index] = 0;
+	}
+	return strValue;
+} 
 
 std::string BitcoinExchange::calculate(std::string file, int line) {
 	std::string *lines = new std::string[line]();
@@ -94,7 +130,9 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 			date = getDate(lines[pos], i);
 			if (date == -1)
 				outOfBounds = true;
-			// value = calcBtc(lines[pos], i);
+			value = calcBtc(lines[pos], date, i);
+			if (value == 0)
+				error = true;
 		} else {
 			error = true;
 		}
@@ -102,10 +140,13 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 			returning += lines[pos];
 		else if (outOfBounds)
 			returning += "Error: date not found";
+		else
+			returning += replaceStr(lines[pos], " | ", " => ") + " = " + to_string_remove_trailing_zeros(value);
 		if (pos < line - 1)
 			returning += "\n";
 		pos++;
 	}
+	std::cout << returning << std::endl;
 	return returning;
 }
 
@@ -290,7 +331,7 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 	long double number = 0;
 	std::stringstream stream(returning);
 	stream >> number;
-	if ((number > 2147483647) && replace)
+	if ((number > 1000) && replace)
 		return "Error: too large a number";
 	if ((minus || comma || first || space || error || tempPos != line.length() || number > 2147483647) && replace == false)
 		throw InvalidDB();

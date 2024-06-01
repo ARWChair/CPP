@@ -6,6 +6,7 @@
 # include <fstream>
 # include <sstream>
 # include <string>
+#include <algorithm>
 
 class BitcoinExchange {
 	public:
@@ -29,6 +30,7 @@ class BitcoinExchange {
 		std::string check_date(std::string line, int *pos, bool replace);
 		std::string check_value(std::string line, int *pos, bool replace);
 		std::string calculate(std::string file, int lines);
+		long double calcBtc(std::string line, int date, int pos);
 		int getDate(std::string line, int &pos);
 		void mapDB();
 		void convert(std::string date, std::string value);
