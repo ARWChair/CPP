@@ -12,13 +12,19 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 	std::string line;
 	int newLine = 0;
 	while (std::getline(file, line)) {
-		this->file += line += "\n";
-		lines++;
+		if (line.length() > 0) {
+			this->file += line += '\n';
+			lines++;
+		}
 	}
+	file.close();
 	line = "";
 	while (std::getline(db, line)) {
-		this->dbFile += line += "\n";
+		if (line.length() > 0) {
+			this->dbFile += line += "\n";
+		}
 	}
+	db.close();
 	this->file = mapString();
 	mapDB();
 	// for (std::map<int, long double>::iterator it = this->db.begin(); it != this->db.end(); it++) {
@@ -44,28 +50,36 @@ BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& copy) {
 	return *this;
 }
 
-int BitcoinExchange::getDate(std::string line, int &pos) {
+int BitcoinExchange::getDate(std::string line) {
 	std::string date;
+	int prev;
+	int pos = 0;
 
-	while (pos < 10) {
+	while (pos < line.length() && pos < 10) {
 		date += line[pos];
 		if (pos == 3 || pos == 6)
-			(pos)++;
-		(pos)++;
+			pos++;
+		pos++;
 	}
 
 	std::stringstream dateStream(date);
 	int intDate = 0;
 	dateStream >> intDate;
 	std::map<int, long double>::iterator first = this->db.begin();
-	std::map<int, long double>::iterator last = std::prev(this->db.end());
-	if (first->first > intDate || last->first < intDate)
+	if (intDate < first->first)
+		return -1;
+	for (; first != db.end(); ++first) {
+		if (first != db.end())
+			prev = first->first;
+	}
+	if (intDate > prev)
 		return -1;
 	return intDate;
 }
 
-long double BitcoinExchange::calcBtc(std::string line, int date, int pos) {
+long double BitcoinExchange::calcBtc(std::string line, int date) {
 	std::string value;
+	int pos = 10;
 
 	pos += 3;
 	while (line[pos] && line[pos] != '\n') {
@@ -76,12 +90,11 @@ long double BitcoinExchange::calcBtc(std::string line, int date, int pos) {
 	long double ldValue = 0;
 	valueStream >> ldValue;
 	std::map<int, long double>::iterator first = this->db.begin();
-	std::map<int, long double>::iterator last = std::prev(this->db.end());
-	for (; last != first; last--)
-		if (date >= last->first) {
+	for (; first != db.end(); ++first)
+		if (date < first->first) {
 			break;
 	}
-	ldValue *= last->second;
+	ldValue *= first->second;
 	return ldValue;
 }
 
@@ -110,7 +123,6 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 	bool outOfBounds;
 	int date;
 	int pos = 0;
-	int i;
 
 	for (int i = 0; i < file.length(); i++) {
 		if (file[i] == '\n') {
@@ -122,15 +134,14 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 		lines[pos] += file[i];
 	}
 	pos = 0;
-	while (pos < line - shift) {
-		i = 0;
+	while (pos < line) {
 		error = false;
 		outOfBounds = false;
 		if (lines[pos].substr(0, 5) != "Error") {
-			date = getDate(lines[pos], i);
+			date = getDate(lines[pos]);
 			if (date == -1)
 				outOfBounds = true;
-			value = calcBtc(lines[pos], date, i);
+			value = calcBtc(lines[pos], date);
 			if (value == 0)
 				error = true;
 		} else {
@@ -142,11 +153,12 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 			returning += "Error: date not found";
 		else
 			returning += replaceStr(lines[pos], " | ", " => ") + " = " + to_string_remove_trailing_zeros(value);
-		if (pos < line - shift - 1) {
+		if (pos < line - 1) {
 			returning += "\n";
 		}
 		pos++;
 	}
+	delete[] lines;
 	return returning;
 }
 
@@ -166,22 +178,24 @@ void BitcoinExchange::convert(std::string date, std::string value) {
 	db.insert(std::make_pair(iDate, ldValue));
 }
 
-std::string BitcoinExchange::check_date(std::string line, int *pos, bool replace) {
+std::string BitcoinExchange::check_date(std::string line, int &pos, bool replace) {
 	bool invalidDate = false;
 	bool invalidDateLength = false;
-	int posCopy = *pos;
-	std::string tempData = "";
-	std::string correction = "";
-	std::string data = "";
-	int day, month, year;
+	int posCopy = pos;
+	std::string tempData;
+	std::string correction;
+	std::string data;
+	int day = 0;
+	int month = 0;
+	int year = 0;
 
-	for (; posCopy < line.length() && posCopy < 4 + *pos; posCopy++) {
+	for (; posCopy < line.length() && posCopy < 4 + pos; posCopy++) {
 		if (!(line[posCopy] >= '0' && line[posCopy] <= '9'))
 			break;
 		tempData += line[posCopy];
 	}
-	if (posCopy != 4 + *pos)
-		invalidDateLength = true;
+	if (posCopy != 4 + pos)
+		return "Error: bad input => " + line;
 	std::stringstream stream(tempData);
 	stream >> year;
 	if (year < 2009 || year > 2022) {
@@ -193,7 +207,7 @@ std::string BitcoinExchange::check_date(std::string line, int *pos, bool replace
 		invalidDate = true;
 	data += line[posCopy];
 	posCopy++;
-	tempData = "";
+	tempData.clear();
 	if ((line[posCopy] >= '0' && line[posCopy] <= '9') && (line[posCopy + 1] >= '0' && line[posCopy + 1] <= '9')) {
 		tempData += line[posCopy];
 		posCopy++;
@@ -214,7 +228,7 @@ std::string BitcoinExchange::check_date(std::string line, int *pos, bool replace
 	correction += "-";
 	correction += tempData;
 	data += tempData;
-	tempData = "";
+	tempData.clear();
 	if (line[posCopy] != '-')
 		invalidDate = true;
 	data += line[posCopy];
@@ -270,18 +284,18 @@ std::string BitcoinExchange::check_date(std::string line, int *pos, bool replace
 		}
 	}
 	if ((invalidDate == true || invalidDateLength == true) && replace) {
-		tempData = "Error: bad input => " + data;
+		tempData = "Error: bad input => " + line;
 	}
 	else if ((invalidDate == true || invalidDateLength == true) && replace == false) {
 		throw InvalidDB();
 	}
 	else
 		tempData = data;
-	*pos = posCopy;
+	pos = posCopy;
 	return tempData;
 }
 
-std::string BitcoinExchange::check_value(std::string line, int *pos, bool replace) {
+std::string BitcoinExchange::check_value(std::string line, int &pos, bool replace) {
 	std::string returning = "";
 	std::string tempData = "";
 	bool minus = false;
@@ -289,7 +303,7 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 	bool first = false;
 	bool space = false;
 	bool comma = false;
-	int tempPos = *pos;
+	int tempPos = pos;
 	int spaces = 0;
 	int commas = 0;
 	int end;
@@ -298,7 +312,7 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 		if (line[tempPos] != ' ')
 			break;
 	}
-	*pos = tempPos;
+	pos = tempPos;
 	for (int i = 0; tempPos < line.length(); tempPos++, i++) {
 		if (i == 0 && line[tempPos] == '.')
 			first = true;
@@ -310,7 +324,7 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 			error = true;
 		tempData += line[tempPos];
 	}
-	tempPos = *pos;
+	tempPos = pos;
 	for (end = line.length() - 1; end >= 0; end--) {
 		if (line[end] != ' ')
 			break;
@@ -321,7 +335,7 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 		returning += line[tempPos];
 	}
 	for (; tempPos < line.length(); tempPos++);
-	*pos = tempPos;
+	pos = tempPos;
 	if (commas > 1)
 		comma = true;
 	if (minus && replace)
@@ -339,15 +353,17 @@ std::string BitcoinExchange::check_value(std::string line, int *pos, bool replac
 }
 
 std::string BitcoinExchange::strip_line(std::string line) {
-	std::string correction = "";
+	std::string correction;
 	std::string tempVal;
-	int pos = 0;
+	int pos;
 
-	for (; pos < line.length(); pos++) {
+	for (pos = 0; pos < line.length(); pos++) {
 		if (line[pos] != ' ')
 			break;
 	}
-	correction += check_date(line, &pos, true);
+	if (pos == line.length())
+		return "Error: bad input => " + line;
+	correction += check_date(line, pos, true);
 	if (!(correction.find("Error:") != std::string::npos)) {
 		for (; pos < line.length(); pos++)
 			if (line[pos] != ' ')
@@ -358,7 +374,7 @@ std::string BitcoinExchange::strip_line(std::string line) {
 		}
 		pos++;
 		correction += " | ";
-		tempVal += check_value(line, &pos, true);
+		tempVal += check_value(line, pos, true);
 		if (tempVal.substr(0, 5) == "Error")
 			correction = tempVal;
 		else
@@ -368,41 +384,22 @@ std::string BitcoinExchange::strip_line(std::string line) {
 }
 
 std::string BitcoinExchange::mapString() {
-	std::string current = "";
-	std::string newFile = "";
-	int currLine = 0;
-	shift = 0;
-	int nls = 0;
+	std::string current;
+	std::string newFile;
 
-	for (int pos = 0; pos < file.length(); pos++) {
-		if (file[pos] == '\n')
-			nls++;
-	}
-	for (int pos = 0; pos < file.length(); pos++) {
-		if (file[pos] == '\n') {
-			nls--;
-			shift++;
-		}
-		if (file[pos] != '\n')
-			break;
-	}
-	for (int i = shift; i < file.length(); i++) {
-		for (int j = i; j < file.length() && nls > 0; j++, i++) {
-			if (file[j] == '\n') {
-				nls--;
-				try {
-					newFile += strip_line(current);
-					if (nls > 0)
-						newFile += "\n";
-				} catch (const std::exception& e) {
-					;
-				}
-				j++;
-				current = "";
-				currLine++;
+	for (int j = 0; j < file.length(); j++) {
+		if (file[j] == '\n') {
+			try {
+				newFile += strip_line(current);
+				if (j < file.length() - 1)
+					newFile += "\n";
+			} catch (const std::exception& e) {
+				;
 			}
-			current += file[j];
+			j++;
+			current.clear();
 		}
+		current += (char)file[j];
 	}
 	return newFile;
 }
@@ -417,7 +414,7 @@ std::string BitcoinExchange::strip_line_db(std::string line) {
 		if (line[pos] != ' ')
 			break;
 	}
-	correction += check_date(line, &pos, false);
+	correction += check_date(line, pos, false);
 	if (!(correction.find("Error:") != std::string::npos)) {
 		for (; pos < line.length(); pos++)
 			if (line[pos] != ' ')
@@ -427,7 +424,7 @@ std::string BitcoinExchange::strip_line_db(std::string line) {
 		pos++;
 		date = correction;
 		correction += ",";
-		value = check_value(line, &pos, false);
+		value = check_value(line, pos, false);
 		convert(date, value);
 		correction += value;
 	}
@@ -435,8 +432,8 @@ std::string BitcoinExchange::strip_line_db(std::string line) {
 }
 
 void BitcoinExchange::mapDB() {
-	std::string current = "";
-	std::string newFile = "";
+	std::string current;
+	std::string newFile;
 	int currLine = 0;
 	int nls = -1;
 
@@ -444,24 +441,17 @@ void BitcoinExchange::mapDB() {
 		if (dbFile[pos] == '\n')
 			nls++;
 	}
-	for (int i = 0; i < dbFile.length(); i++) {
-		for (int j = i; j < dbFile.length() && nls > 0; j++, i++) {
-			if (currLine > 0) {
-				if (dbFile[j] == '\n' && currLine < this->lines) {
-					nls--;
-					newFile += strip_line_db(current);
-					if (currLine < this->lines - 1)
-						newFile += "\n";
-					j++;
-					current = "";
-					currLine++;
-				}
-				current += dbFile[j];
-			} else {
-				if (dbFile[j] == '\n')
-					currLine++;
-			}
+	for (int j = 0; j < dbFile.length() && nls > 0; j++) {
+		if (dbFile[j] == '\n') {
+			nls--;
+			newFile += strip_line_db(current);
+			if (currLine < nls - 1)
+				newFile += "\n";
+			j++;
+			current.clear();
+			currLine++;
 		}
+		current += dbFile[j];
 	}
 }
 
