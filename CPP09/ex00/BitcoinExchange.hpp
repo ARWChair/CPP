@@ -12,10 +12,6 @@ class BitcoinExchange {
 	public:
 		BitcoinExchange();
 		BitcoinExchange(std::string str);
-		BitcoinExchange(const BitcoinExchange& copy);
-		~BitcoinExchange();
-
-		BitcoinExchange& operator=(const BitcoinExchange& copy);
 		class InvalidDB: public std::exception {
 			public:
 				virtual const char *what() const throw();

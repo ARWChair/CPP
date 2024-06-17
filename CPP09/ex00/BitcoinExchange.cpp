@@ -33,22 +33,6 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 	std::cout << calculate(this->file, lines) << std::endl;
 }
 
-BitcoinExchange::BitcoinExchange(const BitcoinExchange& copy) {
-	this->db = copy.db;
-	this->file = copy.file;
-	this->dbFile = copy.dbFile;
-	this->lines = copy.lines;
-}
-
-BitcoinExchange::~BitcoinExchange() {}
-
-BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& copy) {
-	this->db = copy.db;
-	this->file = copy.file;
-	this->dbFile = copy.dbFile;
-	this->lines = copy.lines;
-	return *this;
-}
 
 int BitcoinExchange::getDate(std::string line) {
 	std::string date;
@@ -78,6 +62,7 @@ int BitcoinExchange::getDate(std::string line) {
 }
 
 long double BitcoinExchange::calcBtc(std::string line, int date) {
+	std::map<int, long double>::iterator prevDate;
 	std::string value;
 	int pos = 10;
 
@@ -90,11 +75,12 @@ long double BitcoinExchange::calcBtc(std::string line, int date) {
 	long double ldValue = 0;
 	valueStream >> ldValue;
 	std::map<int, long double>::iterator first = this->db.begin();
-	for (; first != db.end(); ++first)
-		if (date < first->first) {
+	for (; first != db.end(); ++first) {
+		if (date <= first->first)
 			break;
+		prevDate = first;
 	}
-	ldValue *= first->second;
+	ldValue *= prevDate->second;
 	return ldValue;
 }
 
