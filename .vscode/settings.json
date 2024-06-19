@@ -53,6 +53,7 @@
 		"typeinfo": "cpp",
 		"map": "cpp",
 		"chrono": "cpp",
-		"ranges": "cpp"
+		"ranges": "cpp",
+		"list": "cpp"
 	}
 }
