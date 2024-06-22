@@ -3,7 +3,7 @@
 RPN::RPN() {}
 
 RPN::RPN(std::string numbers) {
-	int i;
+	std::size_t i;
 	int solution;
 
 	for (i = 0; i < numbers.length(); i++) {
@@ -33,8 +33,8 @@ RPN& RPN::operator=(const RPN& copy) {
 }
 
 static int argc_count(std::string numbers) {
-	int i;
-	int end = numbers.length();
+	std::size_t i;
+	std::size_t end = numbers.length();
 	int amount = 0;
 	int counted = 0;
 
@@ -86,16 +86,16 @@ static int argc_count(std::string numbers) {
 
 static std::string *convert_args(std::string numbers, int args) {
 	std::string *arr;
-	int i;
-	int delim;
+	std::size_t end = numbers.length();
+	std::size_t i;
+	std::size_t delim;
 	int pos = 0;
-	int end = numbers.length();
 	int amount = 0;
 
 	try {
 		arr = new std::string[args]();
 	} catch (const std::exception& e) {
-		return nullptr;
+		return 0; // check for nullptr
 	}
 	for (i = 0; i < numbers.length(); i++) {
 		if (numbers[i] != ' ')
@@ -164,7 +164,7 @@ int RPN::calc(std::string numbers) {
 	numbers += " ";
 	arguments = argc_count(numbers);
 	arr = convert_args(numbers, arguments);
-	if (arr == nullptr)
+	if (arr == 0)
 		return -1;
 	check_error(arr, arguments);
 	for (int i = 0; i < arguments; i++) {

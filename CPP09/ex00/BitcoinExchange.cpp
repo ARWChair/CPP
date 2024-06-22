@@ -3,14 +3,13 @@
 BitcoinExchange::BitcoinExchange() {}
 
 BitcoinExchange::BitcoinExchange(std::string str) {
-	std::fstream file(str);
-	std::fstream db(std::string("data.csv"));
+	std::fstream file(str.c_str());
+	std::fstream db(std::string("data.csv").c_str());
 	int lines = 0;
 
 	if (!file.is_open())
 		throw std::invalid_argument("Error: could not open file.");
 	std::string line;
-	int newLine = 0;
 	while (std::getline(file, line)) {
 		if (line.length() > 0) {
 			this->file += line += '\n';
@@ -36,8 +35,8 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 
 int BitcoinExchange::getDate(std::string line) {
 	std::string date;
+	std::size_t pos = 0;
 	int prev;
-	int pos = 0;
 
 	while (pos < line.length() && pos < 10) {
 		date += line[pos];
@@ -93,7 +92,10 @@ static std::string replaceStr(std::string line, std::string find, std::string re
 }
 
 static std::string to_string_remove_trailing_zeros(long double value) {
-	std::string strValue = std::to_string(value);
+	std::string strValue;
+	std::ostringstream convert;
+	convert << value;
+	strValue = convert.str();
 	for (int index = strValue.length() - 1; index > 0; index--) {
 		if (strValue[index] == '0')
 			strValue[index] = 0;
@@ -110,7 +112,7 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 	int date;
 	int pos = 0;
 
-	for (int i = 0; i < file.length(); i++) {
+	for (std::size_t i = 0; i < file.length(); i++) {
 		if (file[i] == '\n') {
 			pos++;
 			i++;
@@ -164,10 +166,10 @@ void BitcoinExchange::convert(std::string date, std::string value) {
 	db.insert(std::make_pair(iDate, ldValue));
 }
 
-std::string BitcoinExchange::check_date(std::string line, int &pos, bool replace) {
+std::string BitcoinExchange::check_date(std::string line, std::size_t &pos, bool replace) {
 	bool invalidDate = false;
 	bool invalidDateLength = false;
-	int posCopy = pos;
+	std::size_t posCopy = pos;
 	std::string tempData;
 	std::string correction;
 	std::string data;
@@ -281,18 +283,17 @@ std::string BitcoinExchange::check_date(std::string line, int &pos, bool replace
 	return tempData;
 }
 
-std::string BitcoinExchange::check_value(std::string line, int &pos, bool replace) {
+std::string BitcoinExchange::check_value(std::string line, std::size_t &pos, bool replace) {
 	std::string returning = "";
 	std::string tempData = "";
+	std::size_t tempPos = pos;
+	std::size_t end;
 	bool minus = false;
 	bool error = false;
 	bool first = false;
 	bool space = false;
 	bool comma = false;
-	int tempPos = pos;
-	int spaces = 0;
 	int commas = 0;
-	int end;
 
 	for (; tempPos < line.length(); tempPos++) {
 		if (line[tempPos] != ' ')
@@ -341,7 +342,7 @@ std::string BitcoinExchange::check_value(std::string line, int &pos, bool replac
 std::string BitcoinExchange::strip_line(std::string line) {
 	std::string correction;
 	std::string tempVal;
-	int pos;
+	std::size_t pos;
 
 	for (pos = 0; pos < line.length(); pos++) {
 		if (line[pos] != ' ')
@@ -373,7 +374,7 @@ std::string BitcoinExchange::mapString() {
 	std::string current;
 	std::string newFile;
 
-	for (int j = 0; j < file.length(); j++) {
+	for (std::size_t j = 0; j < file.length(); j++) {
 		if (file[j] == '\n') {
 			try {
 				newFile += strip_line(current);
@@ -394,7 +395,7 @@ std::string BitcoinExchange::strip_line_db(std::string line) {
 	std::string correction = "";
 	std::string value = "";
 	std::string date = "";
-	int pos = 0;
+	std::size_t pos = 0;
 
 	for (; pos < line.length(); pos++) {
 		if (line[pos] != ' ')
@@ -423,11 +424,11 @@ void BitcoinExchange::mapDB() {
 	int currLine = 0;
 	int nls = -1;
 
-	for (int pos = 0; pos < dbFile.length(); pos++) {
+	for (std::size_t pos = 0; pos < dbFile.length(); pos++) {
 		if (dbFile[pos] == '\n')
 			nls++;
 	}
-	for (int j = 0; j < dbFile.length() && nls > 0; j++) {
+	for (std::size_t j = 0; j < dbFile.length() && nls > 0; j++) {
 		if (dbFile[j] == '\n') {
 			nls--;
 			newFile += strip_line_db(current);

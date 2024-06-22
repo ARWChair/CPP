@@ -1,7 +1,9 @@
 #include "RPN.hpp"
 
 int main(int argc, char **argv) {
-	std::string args = "";
+	std::string args;
+
+	(void) argc;
 	for (int i = 1; argv[i]; i++) args += argv[i];
 	try {
 		RPN rpn(args);
