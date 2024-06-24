@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 				sum += " ";
 		}
 		PmergeMe merge(sum);
-		// merge.display();
+		merge.display();
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		return 1;

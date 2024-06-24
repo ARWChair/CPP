@@ -6,11 +6,11 @@ template <typename Container>
 static std::string displayContainer(Container container) {
 	std::string returning;
 	int size = 0;
-	for (typename Container::iterator it = container.begin(); it != container.end() && size < 5; ++it, size++) {
+	for (typename Container::iterator it = container.begin(); it != container.end() && size < 4; ++it, size++) {
 		returning += std::to_string(*it);
 		returning += " ";
 	}
-	if (size == 5) {
+	if (size == 4) {
 		returning += "[...]";
 	}
 	return returning;
@@ -23,10 +23,11 @@ static long double addArtifialZero(long long seconds) {
 }
 
 PmergeMe::PmergeMe(std::string arg) {
+	std::istringstream argStream(arg);
 	bool number = false;
+	int val;
+	std::string line;
 	std::size_t pos;
-	struct timeval now, end;
-	long long seconds;
 
 	amount = -1;
 	for (pos = 0; pos < arg.length(); pos++) {
@@ -39,33 +40,57 @@ PmergeMe::PmergeMe(std::string arg) {
 		throw std::invalid_argument("Error: Invalid character found in argv");
 	else if (!number)
 		throw std::invalid_argument("Error: Cannot operate with empty string");
-	
-	// ---------- TODO ----------- \\'
-	std::istringstream argStream(arg);
-	std::string line;
+	this->arg = arg;
 	while(argStream) {
 		std::getline(argStream, line, (char)32);
-		if (line.length() > 0)
-			check_and_add(line);
+		if (line.length() > 0) {
+			val = check_and_add(line);
+			displayC.push_back(val);
+		}
+	}
+	displayC.pop_back();
+}
+
+void PmergeMe::display() {
+	std::istringstream ListStream(arg);
+	std::istringstream DequeStream(arg);
+	struct timeval now, end;
+	std::string line;
+	long long seconds;
+	int val;
+
+	gettimeofday(&end, nullptr);
+	while(ListStream) {
+		std::getline(ListStream, line, (char)32);
+		if (line.length() > 0) {
+			val = check_and_add(line);
+			list.push_back(val);
+			amount++;
+		}
 	}
 	list.pop_back();
-	deque.pop_back();
-	gettimeofday(&end, nullptr);
 	FordJohnson(list);
 	gettimeofday(&now, nullptr);
 	seconds = now.tv_usec - end.tv_usec;
 	gettimeofday(&end, nullptr);
+	amount = -1;
+	line.clear();
+	while(DequeStream) {
+		std::getline(DequeStream, line, (char)32);
+		if (line.length() > 0) {
+			val = check_and_add(line);
+			deque.push_back(val);
+			amount++;
+		}
+	}
+	deque.pop_back();
 	FordJohnson(deque);
 	gettimeofday(&now, nullptr);
-	std::cout << "Before:\t" + displayContainer(arg) << "\nAfter:\t" << displayContainer(list)
+	std::cout << "Before:\t" + displayContainer(displayC) << "\nAfter:\t" << displayContainer(list)
 				<< "\nTime to process a range of\t" << list.size()
 				<< " elements with std::list :  " << addArtifialZero(seconds) << " us" 
 				<< "\nTime to process a range of\t" << deque.size()
 				<< " elements with std::deque :  " << addArtifialZero(now.tv_usec - end.tv_usec) << " us" << std::endl;
-	// ---------- TODO ----------- \\'
-	// Fix Segfault ab 5: +1,+3,+1,+3,+1,+3,+1,+3,+1,+3,+1,+3,+1,+3 
-	// Grund -> bei den werten wird das letzte array nciht behandelt
-	// ungerade anzahl an arrays = crash
 }
 
 static int getAmount(int amount) {
@@ -105,12 +130,40 @@ void preSort(Container *shards, Container &base, int amount) {
 }
 
 template <typename Container>
+void PmergeMe::mergeExistingContainer(Container &container, Container reserve) {
+	Container temp;
+
+	while (1) {
+		typename Container::iterator ContainerIT = container.begin();
+		typename Container::iterator ReserveIT = reserve.begin();
+		if (ContainerIT == container.end() || ReserveIT == reserve.end())
+			break;
+		if (*ContainerIT <= *ReserveIT) {
+			temp.push_back(*ContainerIT);
+			container.pop_front();
+		} else {
+			temp.push_back(*ReserveIT);
+			reserve.pop_front();
+		}
+	}
+	container.clear();
+	container = temp;
+}
+
+template <typename Container>
 void PmergeMe::FordJohnson(Container& container) {
 	int amount = getAmount(this->amount);
 	Container shards[amount];
+	Container reserve;
 	int listModifierIndex = amount;
+	bool add_later = false;
 
 	preSort(shards, container, amount);
+	if (amount % 2 != 0 && amount > 2) {
+		add_later = true;
+		reserve = shards[amount - 1];
+		listModifierIndex--;
+	}
 	while (listModifierIndex > 1) {
 		for (int inner = 0; inner < listModifierIndex; inner += 2) {
 			typename Container::iterator firstList = shards[inner].begin();
@@ -143,10 +196,13 @@ void PmergeMe::FordJohnson(Container& container) {
 		}
 		listModifierIndex = del;
 	}
+	container.clear();
 	container = shards[0];
+	if (add_later)
+		mergeExistingContainer(container, reserve);
 }
 
-void PmergeMe::check_and_add(std::string line) {
+int PmergeMe::check_and_add(std::string line) {
 	std::stringstream ss(line);
 	long long result;
 	
@@ -157,9 +213,7 @@ void PmergeMe::check_and_add(std::string line) {
 		throw std::overflow_error("Error: number to big");
 	else if (result < 0)
 		throw std::overflow_error("Error: only positiv numbers allowed");
-	list.push_back(result);
-	deque.push_back(result);
-	amount++;
+	return result;
 }
 
 bool PmergeMe::isSorted() {

@@ -13,13 +13,16 @@ class PmergeMe {
 
 		template <typename Container>
 		void FordJohnson(Container& container);
-		// void display();
+		void display();
 	private:
 		std::list<int> list;
 		std::deque<int> deque;
+		std::list<int> displayC;
 		std::string arg;
 		int amount;
-		void check_and_add(std::string line);
+		int check_and_add(std::string line);
+		template <typename Container>
+		void mergeExistingContainer(Container &container, Container reserve);
 		bool isSorted();
 };
 
