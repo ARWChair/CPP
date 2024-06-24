@@ -23,6 +23,5 @@ class PmergeMe {
 		int check_and_add(std::string line);
 		template <typename Container>
 		void mergeExistingContainer(Container &container, Container reserve);
-		bool isSorted();
 };
 
