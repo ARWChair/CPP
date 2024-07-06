@@ -16,20 +16,7 @@ RPN::RPN(std::string numbers) {
 	if (i != numbers.length())
 		throw std::invalid_argument("Error: String contains invalid character");
 	solution = calc(numbers);
-	if (solution == -1)
-		throw std::bad_alloc();
 	std::cout << solution << std::endl;
-}
-
-RPN::RPN(const RPN& copy) {
-	this->numbers = copy.numbers;
-}
-
-RPN::~RPN() {}
-
-RPN& RPN::operator=(const RPN& copy) {
-	this->numbers = copy.numbers;
-	return *this;
 }
 
 static int argc_count(std::string numbers) {
@@ -92,11 +79,9 @@ static std::string *convert_args(std::string numbers, int args) {
 	int pos = 0;
 	int amount = 0;
 
-	try {
-		arr = new std::string[args]();
-	} catch (const std::exception& e) {
-		return 0; // check for nullptr
-	}
+	arr = new std::string[args]();
+	if (!arr)
+		throw std::bad_alloc();
 	for (i = 0; i < numbers.length(); i++) {
 		if (numbers[i] != ' ')
 			break;
@@ -179,11 +164,22 @@ int RPN::calc(std::string numbers) {
 				this->numbers.push(first - second);
 			if (arr[i] == "*")
 				this->numbers.push(first * second);
-			if (arr[i] == "/")
+			if (arr[i] == "/") {
+				if (second == 0) {
+					delete[] arr;
+					throw DivisionByZero();
+				}
 				this->numbers.push(first / second);
+			}
 		} else {
 			std::stringstream stream(arr[i]);
 			stream >> tempNum;
+			if (stream.good())
+				throw std::exception();
+			if (tempNum < 0 || tempNum > 9) {
+				delete[] arr;
+				throw NumberOutOfRange();
+			}
 			this->numbers.push(tempNum);
 		}
 	}
@@ -191,4 +187,12 @@ int RPN::calc(std::string numbers) {
 	if (this->numbers.size() != 1)
 		throw std::length_error("Error: Too many numbers. Invalid syntax");
 	return this->numbers.top();
+}
+
+const char *RPN::NumberOutOfRange::what() const throw() {
+	return "Error: Number out of range";
+}
+
+const char *RPN::DivisionByZero::what() const throw() {
+	return "Error: Cant divide by zero";
 }

@@ -1,11 +1,9 @@
-#ifndef BITCOINEXCHANGE_HPP
-# define BITCOINEXCHANGE_HPP
-# pragma once
-# include <map>
-# include <iostream>
-# include <fstream>
-# include <sstream>
-# include <string>
+#pragma once
+#include <map>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <algorithm>
 
 class BitcoinExchange {
@@ -30,5 +28,3 @@ class BitcoinExchange {
 		void mapDB();
 		void convert(std::string date, std::string value);
 };
-
-#endif

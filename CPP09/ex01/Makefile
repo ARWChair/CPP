@@ -16,9 +16,4 @@ clean:
 fclean:
 	@$(RM) $(OBJS) $(NAME)
 
-nclean:
-	@$(RM) $(NAME)
-
 re: fclean all
-
-super: sclean all

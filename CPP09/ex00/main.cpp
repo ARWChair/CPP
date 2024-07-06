@@ -12,5 +12,6 @@ int main(int argc, char **argv) {
 		BitcoinExchange bitcoin(arg);
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
+		return 1;
 	}
 }

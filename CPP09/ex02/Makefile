@@ -1,7 +1,7 @@
 SRC			= main.cpp PmergeMe.cpp
 NAME		= PmergeMe
 CXX			= c++
-CXXFLAGS	= -Wall -Werror -Wextra -pedantic -std=c++98
+CXXFLAGS	= -Wall -Werror -Wextra -pedantic -std=c++98 -g
 OBJS		= $(SRC:.cpp=.o)
 RM			= rm -f
 
@@ -16,9 +16,4 @@ clean:
 fclean:
 	@$(RM) $(OBJS) $(NAME)
 
-nclean:
-	@$(RM) $(NAME)
-
 re: fclean all
-
-super: sclean all

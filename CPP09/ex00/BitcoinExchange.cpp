@@ -16,6 +16,9 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 			lines++;
 		}
 	}
+	if (this->file.length() == 0) {
+		throw std::invalid_argument("File is empty");
+	}
 	file.close();
 	line = "";
 	while (std::getline(db, line)) {
@@ -24,11 +27,8 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 		}
 	}
 	db.close();
-	this->file = mapString();
 	mapDB();
-	// for (std::map<int, long double>::iterator it = this->db.begin(); it != this->db.end(); it++) {
-	// 	std::cout << it->first << " " << it->second << std::endl;
-	// }
+	this->file = mapString();
 	std::cout << calculate(this->file, lines) << std::endl;
 }
 
@@ -36,7 +36,6 @@ BitcoinExchange::BitcoinExchange(std::string str) {
 int BitcoinExchange::getDate(std::string line) {
 	std::string date;
 	std::size_t pos = 0;
-	int prev;
 
 	while (pos < line.length() && pos < 10) {
 		date += line[pos];
@@ -50,12 +49,6 @@ int BitcoinExchange::getDate(std::string line) {
 	dateStream >> intDate;
 	std::map<int, long double>::iterator first = this->db.begin();
 	if (intDate < first->first)
-		return -1;
-	for (; first != db.end(); ++first) {
-		if (first != db.end())
-			prev = first->first;
-	}
-	if (intDate > prev)
 		return -1;
 	return intDate;
 }
@@ -75,7 +68,7 @@ long double BitcoinExchange::calcBtc(std::string line, int date) {
 	valueStream >> ldValue;
 	std::map<int, long double>::iterator first = this->db.begin();
 	for (; first != db.end(); ++first) {
-		if (date <= first->first)
+		if (date < first->first)
 			break;
 		prevDate = first;
 	}
@@ -130,8 +123,6 @@ std::string BitcoinExchange::calculate(std::string file, int line) {
 			if (date == -1)
 				outOfBounds = true;
 			value = calcBtc(lines[pos], date);
-			if (value == 0)
-				error = true;
 		} else {
 			error = true;
 		}
@@ -186,7 +177,7 @@ std::string BitcoinExchange::check_date(std::string line, std::size_t &pos, bool
 		return "Error: bad input => " + line;
 	std::stringstream stream(tempData);
 	stream >> year;
-	if (year < 2009 || year > 2022) {
+	if (year < 1000 || year > 9999) {
 		invalidDate = true;
 	}
 	correction += year;
@@ -236,17 +227,22 @@ std::string BitcoinExchange::check_date(std::string line, std::size_t &pos, bool
 	}
 	std::stringstream dayStream(tempData);
 	dayStream >> day;
-	if (year == 2022 && month >= 3) {
-		if (month == 3) {
-			if (day > 29)
-				invalidDate = true;
-		} else if (month > 3)
-			invalidDate = true;
-	}
 	data += tempData;
+	if (replace) {
+		std::map<int, long double>::iterator it = db.begin();
+		if (year < it->first/ 10000) {
+			std::istringstream lineStream(line);
+			std::string innerLine;
+
+			std::getline(lineStream, innerLine, (char)'|');
+			tempData = "Error: bad input => " + innerLine;
+			return tempData;
+		}
+	}
+	//check here if date is lower than min of db
 	if (invalidDate == false) {
 		if (month == 2) {
-			if (year == 2012 || year == 2016 || year == 2020) {
+			if ((year % 4 == 0) && (year % 100 != 0 || year % 400 == 0)) {
 				if (day > 29 || day < 0)
 					invalidDate = true;
 			} else {
@@ -272,7 +268,11 @@ std::string BitcoinExchange::check_date(std::string line, std::size_t &pos, bool
 		}
 	}
 	if ((invalidDate == true || invalidDateLength == true) && replace) {
-		tempData = "Error: bad input => " + line;
+		std::istringstream lineStream(line);
+		std::string innerLine;
+
+		std::getline(lineStream, innerLine, (char)'|');
+		tempData = "Error: bad input => " + innerLine;
 	}
 	else if ((invalidDate == true || invalidDateLength == true) && replace == false) {
 		throw InvalidDB();
@@ -309,6 +309,8 @@ std::string BitcoinExchange::check_value(std::string line, std::size_t &pos, boo
 			minus = true;
 		if (i != 0 && line[tempPos] == '-')
 			error = true;
+		if (line[tempPos] == ',')
+			commas += 2;
 		tempData += line[tempPos];
 	}
 	tempPos = pos;

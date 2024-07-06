@@ -10,11 +10,15 @@ class RPN {
 	public:
 		RPN();
 		RPN(std::string numbers);
-		RPN(const RPN& copy);
-		~RPN();
 
-		RPN& operator=(const RPN& copy);
-
+		class NumberOutOfRange: public std::exception {
+			public:
+				virtual const char *what() const throw();
+		};
+		class DivisionByZero: public std::exception {
+			public:
+				virtual const char *what() const throw();
+		};
 	private:
 		std::stack<int> numbers;
 		int arguments;

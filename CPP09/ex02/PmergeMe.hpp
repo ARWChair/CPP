@@ -5,6 +5,7 @@
 #include <deque>
 #include <list>
 #include <sys/time.h>
+#include <iomanip>
 
 class PmergeMe {
 	public:

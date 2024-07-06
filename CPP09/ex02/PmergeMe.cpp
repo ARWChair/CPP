@@ -4,33 +4,34 @@ PmergeMe::PmergeMe() {}
 
 template <typename Container>
 static std::string displayContainer(Container container) {
+	typename Container::iterator it;
 	std::string returning;
 	int size = 0;
 
-	for (typename Container::iterator it = container.begin(); it != container.end() && size < 4; ++it, size++) {
+	for (it = container.begin(); it != container.end() && size < 4; ++it, size++) {
 		std::ostringstream convert;
 		convert << *it;
 		returning += convert.str();
 		returning += " ";
 	}
-	if (size == 4) {
+	if (it != container.end()) {
 		returning += "[...]";
 	}
 	return returning;
 }
 
-static long double addArtifialZero(unsigned int seconds) {
-	long double returning = seconds;
-	returning /= 10000;
+static long double addArtifialZero(unsigned int milliseconds) {
+	long double returning = milliseconds;
+	returning /= 100000;
 	return returning;
 }
 
 PmergeMe::PmergeMe(std::string arg) {
 	std::istringstream argStream(arg);
-	bool number = false;
-	int val;
 	std::string line;
 	std::size_t pos;
+	bool number = false;
+	int val;
 
 	amount = -1;
 	for (pos = 0; pos < arg.length(); pos++) {
@@ -89,9 +90,9 @@ void PmergeMe::display() {
 	deque.pop_back();
 	FordJohnson(deque);
 	gettimeofday(&now, 0);
-	std::cout << "Before:\t" + displayContainer(displayC) << "\nAfter:\t" << displayContainer(list)
+	std::cout << std::setprecision(6) << "Before:\t" + displayContainer(displayC) << "\nAfter:\t" << displayContainer(list)
 				<< "\nTime to process a range of\t" << list.size()
-				<< " elements with std::list :  " << addArtifialZero(seconds) << " us" 
+				<< " elements with std::list :  " << std::fixed << addArtifialZero(seconds) << " us" 
 				<< "\nTime to process a range of\t" << deque.size()
 				<< " elements with std::deque :  " << addArtifialZero(now.tv_usec - end.tv_usec) << " us" << std::endl;
 }
@@ -136,17 +137,23 @@ template <typename Container>
 void PmergeMe::mergeExistingContainer(Container &container, Container reserve) {
 	Container temp;
 
-	while (1) {
-		typename Container::iterator ContainerIT = container.begin();
-		typename Container::iterator ReserveIT = reserve.begin();
-		if (ContainerIT == container.end() || ReserveIT == reserve.end())
-			break;
-		if (*ContainerIT <= *ReserveIT) {
-			temp.push_back(*ContainerIT);
-			container.pop_front();
-		} else {
+	typename Container::iterator ContainerIT = container.begin();
+	typename Container::iterator ReserveIT = reserve.begin();
+	while (!(ContainerIT == container.end() && ReserveIT == reserve.end())) {
+		if (ContainerIT == container.end()) {
 			temp.push_back(*ReserveIT);
-			reserve.pop_front();
+			++ReserveIT;
+		} else if (ReserveIT == reserve.end()) {
+			temp.push_back(*ContainerIT);
+			++ContainerIT;
+		} else {
+			if (*ContainerIT <= *ReserveIT) {
+				temp.push_back(*ContainerIT);
+				++ContainerIT;
+			} else {
+				temp.push_back(*ReserveIT);
+				++ReserveIT;
+			}
 		}
 	}
 	container.clear();
@@ -158,6 +165,7 @@ void PmergeMe::FordJohnson(Container& container) {
 	int amount = getAmount(this->amount);
 	Container *shards;
 	Container reserve;
+	Container fix;
 	int listModifierIndex = amount;
 	bool add_later = false;
 
@@ -173,19 +181,30 @@ void PmergeMe::FordJohnson(Container& container) {
 	while (listModifierIndex > 1) {
 		for (int inner = 0; inner < listModifierIndex; inner += 2) {
 			typename Container::iterator firstList = shards[inner].begin();
-			while (shards[inner + 1].size() != 0) {
-				typename Container::iterator secondList = shards[inner + 1].begin();
-				if (*secondList <= *firstList) {
-					shards[inner].insert(firstList, *secondList);
-					shards[inner + 1].pop_front();
-				} else {
-					++firstList;
-				}
+			typename Container::iterator secondList = shards[inner + 1].begin(); // to be rm'ed
+			while (!(shards[inner + 1].size() + shards[inner].size() == fix.size())) {
 				if (firstList == shards[inner].end()) {
-					shards[inner].insert(firstList, *secondList);
-					shards[inner + 1].pop_front();
+					fix.push_back(*secondList);
+					++secondList;
+				} else if (secondList == shards[inner + 1].end()) {
+					fix.push_back(*firstList);
+					++firstList;
+				} else {
+					if (*firstList < *secondList) {
+						fix.push_back(*firstList);
+						++firstList;
+					} else {
+						fix.push_back(*secondList);
+						++secondList;
+					}
 				}
 			}
+			shards[inner].clear();
+			shards[inner + 1].clear();
+			for (typename Container::iterator it = fix.begin(); it != fix.end(); ++it) {
+				shards[inner].push_back(*it);
+			}
+			fix.clear();
 		}
 		int del = 1;
 		if (listModifierIndex % 2 != 0)
@@ -207,6 +226,7 @@ void PmergeMe::FordJohnson(Container& container) {
 	delete[] shards;
 	if (add_later)
 		mergeExistingContainer(container, reserve);
+	
 }
 
 int PmergeMe::check_and_add(std::string line) {
